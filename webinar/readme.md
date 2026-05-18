@@ -1,7 +1,7 @@
 
 
 ## TITLE: Introducing T Cloud Public's Crossplane provider
-![[crossplane-image.png]]
+![image](crossplane-image.png)
 
 ## Summary
 
