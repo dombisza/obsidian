@@ -6,7 +6,7 @@ Crossplane is an open-source control plane that extends Kubernetes to manage clo
 
 By turning Kubernetes into a universal control plane for infrastructure, Crossplane allows teams to define reusable platform abstractions and self-service APIs that encapsulate organizational standards, security policies, and operational best practices. Developers consume high-level resources, while Crossplane automatically provisions and manages the underlying cloud infrastructure.
 
-By treating infrastructure as code within Kubernetes and integrating naturally with GitOps workflows, Crossplane helps automate deployments, improve consistency, reduce operational overhead, and simplify multi-cloud operations.
+By treating infrastructure as code within Kubernetes and integrating naturally with GitOps workflows, Crossplane helps automate deployments, improve consistency, reduce operational overhead, and simplify cloud operations.
 
 - 💡 Manage cloud services with:
     - ⎈ Kubernetes-style APIs
@@ -33,24 +33,33 @@ By treating infrastructure as code within Kubernetes and integrating naturally w
 
 ## 💡 Let Crossplane automate cloud infra
 
-**Crossplane** brings cloud resource management into **Kubernetes**, enabling declarative provisioning and automated reconciliation of **T Cloud Public** services like *RDS*, *CCE*, *OBS*, *ECS*, etc...
+**T Cloud Crossplane provider** brings cloud resource management into Kubernetes, enabling declarative provisioning and automated reconciliation of services like *RDS*, *CCE*, *OBS*, *ECS*, etc...
+
+When managing cloud resources in Crossplane, there are four key layers working together:
+
+1. **Kubernetes API** – Store resources, validate requests, enforce RBAC, notify controllers.
+2. **Crossplane core** – Compositions, functions, dependency management, resource orchestration.
+3. **Crossplane Providers** – The cloud/service specific implementations.
+4. **ETCD** - Persistent storage of desired and observed state.
+
 ![[Pasted image 20260223083055.png]]
 
 # 👀 Terraform vs Crossplane operation  
-  
-| Aspect                  | Terraform-Based Operations                                       | Crossplane-Based Operations                                                       |
-| ----------------------- | ---------------------------------------------------------------- | --------------------------------------------------------------------------------- |
-| **Primary Model**       | Infrastructure as Code (IaC) using Terraform hcl configurations  | Kubernetes-native infrastructure management using Custom Resources (CRDs)         |
-| **Control Plane**       | External Terraform CLI, Terraform Cloud, or automation pipelines | Kubernetes acts as the control plane                                              |
-| **State Management**    | Requires separate state files (local or remote backend)          | State stored in Kubernetes' etcd                                                  |
-| **Resource Lifecycle**  | CI/CD pipelines or manual runs                                   | Continuously reconciled by Kubernetes controllers                                 |
-| **Drift Detection**     | Periodic `terraform plan` required                               | Automatic and continuous reconciliation                                           |
-| **Operational Model**   | Push-based execution                                             | Pull-based reconciliation                                                         |
-| **Multi-Cloud Support** | Mature and extensive                                             | Supported through Crossplane providers                                            |
-| **GitOps Integration**  | Indirect, usually through CI/CD runners                          | Native fit with GitOps tools like ArgoCD                                          |
-| **Day-2 Operations**    | Changes require Terraform runs                                   | Continuous management and automated remediation                                   |
-| **Learning Curve**      | Easier for infrastructure teams                                  | Easier for Kubernetes-centric platform teams, but can be more complex             |
-| **Best Fit**            | Traditional infrastructure automation, broad cloud coverage      | Internal developer platforms, Kubernetes-first organizations, GitOps environments |
+Crossplane does sound like automated Terraform, what are the differences?
+
+| Aspect                  | Terraform-Based Operations                                            | Crossplane-Based Operations                                               |
+| ----------------------- | --------------------------------------------------------------------- | ------------------------------------------------------------------------- |
+| **Primary Model**       | Infrastructure as Code using Terraform hcl configurations             | Kubernetes-native infrastructure management using Custom Resources (CRDs) |
+| **Control Plane**       | Terraform CLI, Terraform Cloud, or automation pipelines               | Kubernetes acts as the control plane                                      |
+| **State Management**    | Requires separate state files (local or remote backend) + state drama | State stored in Kubernetes' etcd                                          |
+| **Resource Lifecycle**  | CI/CD pipelines or manual runs                                        | Continuously reconciled by Kubernetes controllers                         |
+| **Drift Detection**     | Periodic `terraform plan` required                                    | Automatic and continuous reconciliation                                   |
+| **Operational Model**   | Push-based execution                                                  | Pull-based reconciliation                                                 |
+| **Multi-Cloud Support** | Mature and extensive                                                  | More limited                                                              |
+| **GitOps Integration**  | Indirect, usually through CI/CD runners                               | Native fit with GitOps tools like ArgoCD                                  |
+| **Day-2 Operations**    | Changes require Terraform runs                                        | Continuous management and automated remediation                           |
+| **Learning Curve**      | Easier for infrastructure teams                                       | "Easier" for Kubernetes-centric platform teams, but can be more complex   |
+| **Best Fit**            | Traditional infrastructure automation                                 | IdP, Kubernetes-first organizations                                       |
 
 # ⎈ Crossplane providers
 
@@ -58,8 +67,8 @@ By treating infrastructure as code within Kubernetes and integrating naturally w
     - Define APIs -> [ManagedResource](https://docs.crossplane.io/latest/managed-resources/managed-resources/)
     - Authentication
     - Implement controllers
-    - Manage external infrastructure resources
-- Most providers are built on top of **Terraform providers** with upjet
+    - Manage(CRUD) external infrastructure resources
+- Most providers are built from **Terraform providers** with upjet
 
 🚀 Example `ManagedResource` to deploy an `OBS` bucket:
 ```yaml
@@ -111,7 +120,6 @@ A _managed resource_ (`MR`) represents an external service in a Provider. When
 apiVersion: obs.opentelekomcloud.m.crossplane.io/v1alpha1
 kind: Bucket
 ```
-**TODO note: namespaced and clustered**
 ### forProvider
 
 - The `spec.forProvider` of a managed resource maps to the parameters of the external resource.
@@ -126,6 +134,7 @@ spec:
     bucket: crossplane-test
 ```
 
+TODO note: namespaced and clustered resources
 # 🛠️ Installing and Configuring the Provider
 
 ## Install Crossplane core
