@@ -1,8 +1,9 @@
 ![[Pasted image 20260617084139.png]]
 
+TODOS: links, re-read, re-structure based on feedback
 # 🍦 What is Crossplane
 
-Crossplane is an open-source control plane that extends Kubernetes to manage cloud infrastructure and services using Kubernetes APIs. It enables platform teams to provision and manage resources across providers such as AWS, Azure, GCP, **T Cloud Public** through declarative, Kubernetes-native configurations.
+[Crossplane](https://docs.crossplane.io/latest/whats-crossplane/) is an open-source control plane that extends Kubernetes to manage cloud infrastructure and services using Kubernetes APIs. It enables platform teams to provision and manage resources across providers such as AWS, Azure, GCP, **T Cloud Public** through declarative, Kubernetes-native configurations.
 
 By turning Kubernetes into a universal control plane for infrastructure, Crossplane allows teams to define reusable platform abstractions and self-service APIs that encapsulate organizational standards, security policies, and operational best practices. Developers consume high-level resources, while Crossplane automatically provisions and manages the underlying cloud infrastructure.
 
@@ -11,7 +12,7 @@ By treating infrastructure as code within Kubernetes and integrating naturally w
 - 💡 Manage cloud services with:
     - ⎈ Kubernetes-style APIs
     - 🕹️ **Reconciliation** loops:
-	    - Drives from observed to desired state automaticly
+	    - Drives from observed to desired state automatically
     - 💚 **GitOps** tools/workflows:
 	    - `helm`
 	    - `helmfile`
@@ -33,7 +34,7 @@ By treating infrastructure as code within Kubernetes and integrating naturally w
 
 ## 💡 Let Crossplane automate cloud infra
 
-**T Cloud Crossplane provider** brings cloud resource management into Kubernetes, enabling declarative provisioning and automated reconciliation of services like *RDS*, *CCE*, *OBS*, *ECS*, etc...
+[T Cloud Crossplane provider](https://github.com/opentelekomcloud/provider-opentelekomcloud) brings cloud resource management into Kubernetes, enabling declarative provisioning and automated reconciliation of services like *RDS*, *CCE*, *OBS*, *ECS*, etc...
 
 When managing cloud resources in Crossplane, there are four key layers working together:
 
@@ -134,7 +135,8 @@ spec:
     bucket: crossplane-test
 ```
 
-TODO note: namespaced and clustered resources
+> [!NOTE]
+> `ManagedResources` can be either cluster or namespace scoped. Cluster scoped MRs are legacy resources since v2.0 Crossplane, thus we recommend using Namespace scoped APIs. Staying with OBS example `obs.opentelekomcloud.m.crossplane.io` is a modern namespaced API and `obs.opentelekomcloud.crossplane.io` is legacy Cluster scoped.
 # 🛠️ Installing and Configuring the Provider
 
 ## Install Crossplane core
@@ -171,7 +173,7 @@ kind: Provider
 metadata:
   name: provider-opentelekomcloud
 spec:
-  package: xpkg.upbound.io/opentelekomcloud/provider-opentelekomcloud:v0.7.0
+  package: xpkg.upbound.io/opentelekomcloud/provider-opentelekomcloud:v0.9.0
 EOF
 ```
 
@@ -226,27 +228,39 @@ A composite resource, or XR, represents a set of Kubernetes resources as a singl
 - **Infrastructure abstraction** – Hides cloud-provider-specific complexity behind higher-level APIs that align with business and platform requirements.
 - **Reusable infrastructure patterns** – Packages common architectures (such as databases, Kubernetes clusters, or application environments) into reusable building blocks that can be deployed repeatedly and consistently.
 
-## 🚀 Example standardized Database
-Company rules:
-- only PostgreSQL
-- Backup 
-- Just some specific flavors
-- Max DB size 
-- Encrypted disks TODO
-Platform Engineering team creates a new abstraction API with the help of Crossplane Compositions and Dev team can deploy their database from a simple manifest:
+## 🚀 Standardized Database showcase
+
+Imagine a company with multiple development teams, each needing an SQL database for their applications. Using Crossplane, the Platform Engineering team can create guardrails, security policies, and standards that developers must follow. This allows development teams to self-service database provisioning without needing to understand the underlying database infrastructure, cloud APIs or Crossplane.
+
+**Company requirements:**
+
+- PostgreSQL only 
+- Backups must be enabled 
+- Only approved database flavors can be used
+- Maximum database size: 500 GB
+- Internal access only
+- All resources must be deployed in the same namespace
+- Only CLOUDSSD block storage is allowed
+
+The Platform Engineering team creates a custom abstraction API using Crossplane Composite Resources. Development teams can then provision a compliant database using a simple manifest:
 ```yaml
 apiVersion: database.example.org/v1alpha1
 kind: DbInstance
 metadata:
   name: team-a-db
-  namespace: team-a-ns
+  namespace: team-a
 spec:
   name: team-a-db
   availabilityZone: eu-de-03
   flavor: small
   size: 100
+  team: team-a
 ```
 
+### ⚡️Links for the working example:
+[Composite Resource Definition](https://github.com/dombisza/obsidian/blob/master/crossplane-intro/manifests/002_xrd.yaml)
+[Composition](https://github.com/dombisza/obsidian/blob/master/crossplane-intro/manifests/003_xr.yaml)
+[DbInstance](https://github.com/dombisza/obsidian/blob/master/crossplane-intro/manifests/004_psql.yaml)
 
 ## 🧩Multi-cloud Platform Engineering
 
@@ -301,200 +315,4 @@ spec:
       provider: tcloud
 ```
 [# Managing Resources Across Multiple Cloud Providers with Crossplane](https://oneuptime.com/blog/post/2026-02-09-crossplane-multiple-clouds/view)
-
-# ✨Demo checklist
-### 📦 Basic MR
-- [ ] Run through install
-> [!NOTE]- Install. 
-> [install provider](https://github.com/opentelekomcloud/provider-opentelekomcloud?tab=readme-ov-file#install-provider-opentelekomcloud)
-
-
-- [ ] Show `ManagedResouce:buckets`
-> [!bucket]- bucket.yaml
-> ```yaml
-> apiVersion: obs.opentelekomcloud.m.crossplane.io/v1alpha1
-> kind: Bucket
-> metadata:
->   annotations:
->     meta.upbound.io/example-id: obs/v1alpha1/bucket
->   labels:
->     testing.upbound.io/example-name: b
->   name: b
->   namespace: test
-> spec:
->   forProvider:
->     acl: private
->     bucket: crossplane-test999999
->     tags:
->       Env: Test
->       foo: bar
->       managed: xplane
-> ```
-
-
-- [ ] Deploy an `OBS` `bucket`
-> [!NOTE]- Deploy 
-> `kubectl apply -f bucket.yaml`
-
-
-- [ ] Show reconcile
-> [!NOTE]- Note
-> Delete TAGS, after 1 minute it will reconcile.
-
-
-### 🚢 MR with dynamic values
-- [ ] Show `ManagedResource:rds`
-> [!bucket]- rds.yaml
-> ```yaml
-> apiVersion: v1
-> kind: Secret
-> metadata:
->   name: example-rds-secret
->   namespace: test
-> type: Opaque
-> data:
->   example-rds-key: UG9zdGdyZXNAIzIwMjQ=
->
-> ---
-> apiVersion: vpc.opentelekomcloud.m.crossplane.io/v1alpha1
-> kind: VpcV1
-> metadata:
->   annotations:
->     meta.upbound.io/example-id: vpc/v1alpha1/v1
->   labels:
->     testing.upbound.io/example-name: sample-rds-instance
->   name: sample-rds-instance
->   namespace: test
-> spec:
->   forProvider:
->     cidr: "192.168.0.0/16"
->     name: crossplane-rds-vpc
->     tags:
->       managed-by: crossplane
->
-> ---
-> apiVersion: vpc.opentelekomcloud.m.crossplane.io/v1alpha1
-> kind: SubnetV1
-> metadata:
->   annotations:
->     meta.upbound.io/example-id: vpc/v1alpha1/subnetv1
->   labels:
->     testing.upbound.io/example-name: sample-rds-instance
->   name: sample-rds-instance
->   namespace: test
-> spec:
->   forProvider:
->     cidr: "192.168.0.0/16"
->     gatewayIp: "192.168.0.1"
->     name: crossplane-rds-subnet
->     ntpAddresses: "10.100.0.33,10.100.0.34"
->     vpcIdSelector:
->       matchLabels:
->         testing.upbound.io/example-name: sample-rds-instance
->     tags:
->       managed-by: crossplane
->
-> ---
-> apiVersion: compute.opentelekomcloud.m.crossplane.io/v1alpha1
-> kind: SecgroupV2
-> metadata:
->   annotations:
->     meta.upbound.io/example-id: compute/v1alpha1/secgroupv2
->   labels:
->     testing.upbound.io/example-name: sample-rds-instance
->   name: sample-rds-instance
->   namespace: test
-> spec:
->   forProvider:
->     description: crossplane security group
->     name: crossplane-rds-sg
->     rule:
->       - cidr: 0.0.0.0/0
->         fromPort: 8635
->         ipProtocol: tcp
->         toPort: 8635
->       - cidr: 0.0.0.0/0
->         fromPort: 8080
->         ipProtocol: tcp
->         toPort: 8080
->       - cidr: 0.0.0.0/0
->         fromPort: 443
->         ipProtocol: tcp
->         toPort: 443
->
-> ---
-> apiVersion: vpc.opentelekomcloud.m.crossplane.io/v1alpha1
-> kind: EIPV1
-> metadata:
->   annotations:
->     meta.upbound.io/example-id: vpc/v1alpha1/eipv1
->   labels:
->     testing.upbound.io/example-name: sample-rds-instance
->   name: sample-rds-instance
->   namespace: test
-> spec:
->   forProvider:
->     bandwidth:
->       - chargeMode: traffic
->         name: crossplane-rds-instance
->         shareType: PER
->         size: 8
->     publicip:
->       - type: 5_bgp
->
-> ---
-> apiVersion: rds.opentelekomcloud.m.crossplane.io/v1alpha1
-> kind: InstanceV3
-> metadata:
->   annotations:
->     meta.upbound.io/example-id: rds/v1alpha1/instancev3
->   labels:
->     testing.upbound.io/example-name: sample-rds-instance
->   name: sample-rds-instance
->   namespace: test
-> spec:
->   forProvider:
->     availabilityZone:
->       - eu-de-03
->     backupStrategy:
->       - keepDays: 1
->         startTime: 08:00-09:00
->     db:
->       - passwordSecretRef:
->           key: example-rds-key
->           name: example-rds-secret
->         port: 8635
->         type: PostgreSQL
->         version: "15"
->     flavor: rds.pg.n1.large.2
->     name: crossplane-rds-instance
->     computeSecurityGroupIdSelector:
->       matchLabels:
->         testing.upbound.io/example-name: sample-rds-instance
->     subnetIdSelector:
->       matchLabels:
->         testing.upbound.io/example-name: sample-rds-instance
->     tags:
->       managed-by: crossplane
->     volume:
->       - size: 100
->         type: CLOUDSSD
->     vpcIdSelector:
->       matchLabels:
->         testing.upbound.io/example-name: sample-rds-instance
->     publicIpsSelector:
->       matchLabels:
->         testing.upbound.io/example-name: sample-rds-instance
-> ```
-
-
-- [ ] Highlight dynamic value assignment
-> [!NOTE]- Info 
-> IDs from other resources(dependencies) can be populated dynamically using the Kubernetes labeling system. For example, you can assign the label `testing.upbound.io/example-name: sample-rds-instance` to the `VpcV1` resource and then use the `vpcIdSelector` field to dynamically reference the VPC ID.
-
-
-- [ ] Deploy `RDS`
-> [!NOTE]- Deploy 
-> `kubectl apply -f rds.yaml`
-
 
