@@ -1,0 +1,9 @@
+apiVersion: database.example.org/v1alpha1
+kind: DbInstance
+metadata:
+  name: team-a-db
+spec:
+  name: team-a-db
+  availabilityZone: eu-de-03
+  flavor: small
+  size: 100
