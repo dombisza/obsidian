@@ -1,4 +1,4 @@
-![[Pasted image 20260617084139.png]]
+![image](Pasted image 20260617084139.png)
 
 TODOS: links, re-read, re-structure based on feedback
 # 🍦 What is Crossplane
@@ -43,7 +43,7 @@ When managing cloud resources in Crossplane, there are four key layers working t
 3. **Crossplane Providers** – The cloud/service specific implementations.
 4. **ETCD** - Persistent storage of desired and observed state.
 
-![[Pasted image 20260223083055.png]]
+![image](Pasted image 20260223083055.png)
 
 # 👀 Terraform vs Crossplane operation  
 Crossplane does sound like automated Terraform, what are the differences?
@@ -220,7 +220,7 @@ EOF
 # 🚀 Composite Resources
 A composite resource, or XR, represents a set of Kubernetes resources as a single Kubernetes object. Crossplane creates composite resources when users access a custom API, defined in the CompositeResourceDefinition.
 
-![[Pasted image 20260624122146.png]]
+![image](Pasted image 20260624122146.png)
 
 - **Multi-cloud engineering** – Enables composing infrastructure APIs that work consistently across multiple cloud providers.
 - **Standardized cloud resources** – Allows platform teams to define approved infrastructure patterns, ensuring consistency, security, and compliance across the organization.
