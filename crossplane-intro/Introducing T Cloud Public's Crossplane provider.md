@@ -1,6 +1,6 @@
 ![[Pasted image 20260617084139.png]]
 
-# 🧩 What is Crossplane
+# 🍦 What is Crossplane
 
 Crossplane is an open-source control plane that extends Kubernetes to manage cloud infrastructure and services using Kubernetes APIs. It enables platform teams to provision and manage resources across providers such as AWS, Azure, GCP, **T Cloud Public** through declarative, Kubernetes-native configurations.
 
@@ -225,10 +225,27 @@ A composite resource, or XR, represents a set of Kubernetes resources as a singl
 - **Self-service infrastructure** – Gives developers simple, application-focused APIs to provision infrastructure without needing deep expertise in cloud platforms.
 - **Infrastructure abstraction** – Hides cloud-provider-specific complexity behind higher-level APIs that align with business and platform requirements.
 - **Reusable infrastructure patterns** – Packages common architectures (such as databases, Kubernetes clusters, or application environments) into reusable building blocks that can be deployed repeatedly and consistently.
-Demo Ideas:
-- keycloak
-- standardized rds -- most likely
-- APP api: deployment+obs+dns+ingress static stuff
+
+## 🚀 Example standardized Database
+Company rules:
+- only PostgreSQL
+- Backup 
+- Just some specific flavors
+- Max DB size 
+- Encrypted disks TODO
+Platform Engineering team creates a new abstraction API with the help of Crossplane Compositions and Dev team can deploy their database from a simple manifest:
+```yaml
+apiVersion: database.example.org/v1alpha1
+kind: DbInstance
+metadata:
+  name: team-a-db
+  namespace: team-a-ns
+spec:
+  name: team-a-db
+  availabilityZone: eu-de-03
+  flavor: small
+  size: 100
+```
 
 
 ## 🧩Multi-cloud Platform Engineering
