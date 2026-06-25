@@ -6,18 +6,14 @@ spec:
   compositeTypeRef:
     apiVersion: database.example.org/v1alpha1
     kind: DbInstance
-
   mode: Pipeline
-
   pipeline:
     - step: patch-and-transform
       functionRef:
         name: function-patch-and-transform
-
       input:
         apiVersion: pt.fn.crossplane.io/v1beta1
         kind: Resources
-
         resources:
           - name: secret
             base:
@@ -25,29 +21,31 @@ spec:
               kind: Secret
               metadata:
                 name: example-rds-secret
-                namespace: test
               type: Opaque
               data:
                 example-rds-key: "UG9zdGdyZXNAIzIwMjQ="
-
+            patches:
+              - type: FromCompositeFieldPath
+                fromFieldPath: spec.team
+                toFieldPath: metadata.namespace
           - name: vpc
             base:
               apiVersion: vpc.opentelekomcloud.m.crossplane.io/v1alpha1
               kind: VpcV1
-              metadata:
-                namespace: test
               spec:
                 forProvider:
                   cidr: "192.168.0.0/16"
                   name: crossplane-rds-vpc
                   tags:
                     managed-by: crossplane
+            patches:
+              - type: FromCompositeFieldPath
+                fromFieldPath: spec.team
+                toFieldPath: metadata.namespace
           - name: subnet
             base:
               apiVersion: vpc.opentelekomcloud.m.crossplane.io/v1alpha1
               kind: SubnetV1
-              metadata:
-                namespace: test
               spec:
                 forProvider:
                   cidr: "192.168.0.0/16"
@@ -58,59 +56,38 @@ spec:
                     matchControllerRef: true
                   tags:
                     managed-by: crossplane
+            patches:
+              - type: FromCompositeFieldPath
+                fromFieldPath: spec.team
+                toFieldPath: metadata.namespace
           - name: security-group
             base:
               apiVersion: compute.opentelekomcloud.m.crossplane.io/v1alpha1
               kind: SecgroupV2
-              metadata:
-                namespace: test
               spec:
                 forProvider:
                   description: crossplane security group
                   name: crossplane-rds-sg
                   rule:
-                    - cidr: 0.0.0.0/0
+                    - cidr: 192.168.0.0/16
                       fromPort: 8635
                       ipProtocol: tcp
                       toPort: 8635
-                    - cidr: 0.0.0.0/0
-                      fromPort: 8080
-                      ipProtocol: tcp
-                      toPort: 8080
-                    - cidr: 0.0.0.0/0
-                      fromPort: 443
-                      ipProtocol: tcp
-                      toPort: 443
-          - name: eip
-            base:
-              apiVersion: vpc.opentelekomcloud.m.crossplane.io/v1alpha1
-              kind: EIPV1
-              metadata:
-                namespace: test
-              spec:
-                forProvider:
-                  bandwidth:
-                    - chargeMode: traffic
-                      name: crossplane-rds-instance
-                      shareType: PER
-                      size: 8
-                  publicip:
-                    - type: 5_bgp
+            patches:
+              - type: FromCompositeFieldPath
+                fromFieldPath: spec.team
+                toFieldPath: metadata.namespace
           - name: rds
             base:
               apiVersion: rds.opentelekomcloud.m.crossplane.io/v1alpha1
               kind: InstanceV3
-              metadata:
-                namespace: test
               spec:
                 forProvider:
                   availabilityZone:
                     - eu-de-03
-
                   backupStrategy:
                     - keepDays: 1
                       startTime: 08:00-09:00
-
                   db:
                     - passwordSecretRef:
                         name: example-rds-secret
@@ -118,30 +95,19 @@ spec:
                       port: 8635
                       type: PostgreSQL
                       version: "15"
-
                   flavor: rds.pg.n1.large.2
-
                   name: default
-
                   tags:
                     managed-by: crossplane
-
                   volume:
                     - size: 100
                       type: CLOUDSSD
-
                   vpcIdSelector:
                     matchControllerRef: true
-
                   subnetIdSelector:
                     matchControllerRef: true
-
                   computeSecurityGroupIdSelector:
                     matchControllerRef: true
-
-                  publicIpsSelector:
-                    matchControllerRef: true
-
             patches:
               - type: FromCompositeFieldPath
                 fromFieldPath: spec.name
@@ -159,7 +125,9 @@ spec:
                     map:
                       small: rds.pg.n1.large.2
                       large: rds.pg.n1.large.4
-
               - type: FromCompositeFieldPath
                 fromFieldPath: spec.size
                 toFieldPath: spec.forProvider.volume[0].size
+              - type: FromCompositeFieldPath
+                fromFieldPath: spec.team
+                toFieldPath: metadata.namespace

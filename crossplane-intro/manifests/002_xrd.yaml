@@ -22,6 +22,7 @@ spec:
                 - availabilityZone
                 - flavor
                 - size
+                - team
               properties:
                 name:
                   type: string
@@ -35,3 +36,6 @@ spec:
                 size:
                   type: integer
                   minimum: 40
+                  maximum: 500
+                team:
+                  type: string
