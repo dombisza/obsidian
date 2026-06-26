@@ -16,6 +16,8 @@ spec:
         kind: Resources
         resources:
           - name: secret
+            readinessChecks:
+              - type: None
             base:
               apiVersion: v1
               kind: Secret

@@ -3,7 +3,7 @@
 TODOS: links, re-read, re-structure based on feedback
 # 🍦 What is Crossplane
 
-[Crossplane](https://docs.crossplane.io/latest/whats-crossplane/) is an open-source control plane that extends Kubernetes to manage cloud infrastructure and services using Kubernetes APIs. It enables platform teams to provision and manage resources across providers such as AWS, Azure, GCP, **T Cloud Public** through declarative, Kubernetes-native configurations.
+[Crossplane](https://docs.crossplane.io/latest/whats-crossplane/) is an open-source control plane that extends Kubernetes to manage cloud infrastructure and services using Kubernetes. It enables platform teams to provision and manage resources across providers such as AWS, Azure, GCP, **T Cloud Public** through declarative, Kubernetes-native configurations.
 
 By turning Kubernetes into a universal control plane for infrastructure, Crossplane allows teams to define reusable platform abstractions and self-service APIs that encapsulate organizational standards, security policies, and operational best practices. Developers consume high-level resources, while Crossplane automatically provisions and manages the underlying cloud infrastructure.
 
@@ -36,7 +36,7 @@ By treating infrastructure as code within Kubernetes and integrating naturally w
 
 [T Cloud Crossplane provider](https://github.com/opentelekomcloud/provider-opentelekomcloud) brings cloud resource management into Kubernetes, enabling declarative provisioning and automated reconciliation of services like *RDS*, *CCE*, *OBS*, *ECS*, etc...
 
-When managing cloud resources in Crossplane, there are four key layers working together:
+When managing cloud resources in Crossplane, there are four key components working together:
 
 1. **Kubernetes API** – Store resources, validate requests, enforce RBAC, notify controllers.
 2. **Crossplane core** – Compositions, functions, dependency management, resource orchestration.
@@ -56,7 +56,7 @@ Crossplane does sound like automated Terraform, what are the differences?
 | **Resource Lifecycle**  | CI/CD pipelines or manual runs                                        | Continuously reconciled by Kubernetes controllers                         |
 | **Drift Detection**     | Periodic `terraform plan` required                                    | Automatic and continuous reconciliation                                   |
 | **Operational Model**   | Push-based execution                                                  | Pull-based reconciliation                                                 |
-| **Multi-Cloud Support** | Mature and extensive                                                  | More limited                                                              |
+| **Multi-Cloud Support** | Mature and extensive                                                  | Limited, but catching up                                                  |
 | **GitOps Integration**  | Indirect, usually through CI/CD runners                               | Native fit with GitOps tools like ArgoCD                                  |
 | **Day-2 Operations**    | Changes require Terraform runs                                        | Continuous management and automated remediation                           |
 | **Learning Curve**      | Easier for infrastructure teams                                       | "Easier" for Kubernetes-centric platform teams, but can be more complex   |
@@ -64,12 +64,12 @@ Crossplane does sound like automated Terraform, what are the differences?
 
 # ⎈ Crossplane providers
 
-- [Providers](https://docs.crossplane.io/latest/packages/providers/) are responsible for all aspects of connecting to non-Kubernetes resources, like cloud APIs:
-    - Define APIs -> [ManagedResource](https://docs.crossplane.io/latest/managed-resources/managed-resources/)
-    - Authentication
+- [Providers](https://docs.crossplane.io/latest/packages/providers/) are responsible for all aspects of connecting to non-Kubernetes resources:
+    - Define cloud APIs as Kubernetes CRDs
+    - Handle Authentication
     - Implement controllers
-    - Manage(CRUD) external infrastructure resources
-- Most providers are built from **Terraform providers** with upjet
+    - Manage external infrastructure resources
+- Most providers are built from **Terraform providers** with [upjet](https://github.com/crossplane/upjet) 
 
 🚀 Example `ManagedResource` to deploy an `OBS` bucket:
 ```yaml
@@ -98,23 +98,26 @@ spec:
     - Single [source of truth](https://docs.crossplane.io/latest/managed-resources/managed-resources/#forprovider)
     - **Desired** state definition
     - Protected against deletion by default
-## 🕹️ provider-opentelekomcloud
+## 🦾 provider-opentelekomcloud
 
 - Provider built using **Upjet tooling**
 - Upjet [generates](https://github.com/crossplane/upjet-provider-template) Crossplane providers from Terraform providers
 - All Terraform-supported services are configurable
 - Some services still lack dynamic value assignment support: [tracker](https://github.com/opentelekomcloud/provider-opentelekomcloud/issues/7)
 
+> [!NOTE]
+> The provider ships hundreds of new APIs and controllers by default, which will increase the load on `kube-apiserver` and `etcd`. Please consider using [ManagedResourceActivationPolicies](https://docs.crossplane.io/latest/managed-resources/managed-resource-activation-policies/) to only activate needed resources.
+
 # 🕹️ManagedResources (MR)
 
-A _managed resource_ (`MR`) represents an external service in a Provider. When users create a new managed resource, the Provider reacts by creating an external resource inside the Provider’s environment.
-## Managed resource fields
+A _managedResource_ (`MR`) represents an external service in a Provider. When users create a new managed resource, the Provider reacts by creating an external resource inside the Provider’s environment.
+## 🎚️ Managed resource fields
 
-- The Provider defines the group, kind and version of a managed resource. The Provider also define the available settings of a managed resource.
+- The Provider defines the `group`, `kind` and `version` of a managed resource. The Provider also define the available settings of a managed resource.
 
 ### Group, Kind and Version
 
-- Each managed resource is a unique API endpoint with their own group, kind and version.
+- Each managed resource is a unique API endpoint with their own `group`, `kind` and `version`.
 - For example the [T Cloud Provider](LINK) defines the `Bucket` (OBS) kind from the group `obs.opentelekomcloud.m.crossplane.io`
 
 ```yaml
@@ -124,7 +127,7 @@ kind: Bucket
 ### forProvider
 
 - The `spec.forProvider` of a managed resource maps to the parameters of the external resource.
-- For example, when creating a `Bucket` instance, the Provider supports defining the `region`, `acl`, `versioning` and other fields here.
+- For example, when creating a `Bucket` instance, the Provider supports defining the `region`, `acl`, `versioning` and [other](https://marketplace.upbound.io/providers/opentelekomcloud/provider-opentelekomcloud/v0.9.0/resources/obs.opentelekomcloud.m.crossplane.io/Bucket/v1alpha1#doc:spec) fields here.
 
 ```yaml
 spec:
@@ -137,9 +140,23 @@ spec:
 
 > [!NOTE]
 > `ManagedResources` can be either cluster or namespace scoped. Cluster scoped MRs are legacy resources since v2.0 Crossplane, thus we recommend using Namespace scoped APIs. Staying with OBS example `obs.opentelekomcloud.m.crossplane.io` is a modern namespaced API and `obs.opentelekomcloud.crossplane.io` is legacy Cluster scoped.
+
+## ⚙️ Automatic reconciliation
+Crossplane and Providers continuously reconciling to the desired state defined in Kubernetes. The Provider watches the `ManagedResource` state in the cloud API and compares it's state with the desired configuration. If a resource is modified outside of Crossplane , the Provider automatically detects and corrects this drift unless configured otherwise.
+
+### 🚨 Deletion protection
+By default, the provider protects resources from accidental deletion or re-creation. External resources are deleted only when the Kubernetes resource is intentionally removed.
+
+```
+### example changing the AZ field for and RDS instance which would lead to re-creation:
+  Conditions:
+    Last Transition Time:  2026-06-26T11:00:54Z
+    Message:               observe failed: cannot run plan: plan failed: Instance cannot be destroyed: Resource opentelekomcloud_rds_instance_v3.team-a-db-f4948320f209 has lifecycle.prevent_destroy set, but the plan calls for this resource to be destroyed. To avoid this error and continue with the plan, either disable lifecycle.prevent_destroy or reduce the scope of the plan using the -target flag.
+```
+
 # 🛠️ Installing and Configuring the Provider
 
-## Install Crossplane core
+## 🍦 Install Crossplane core
 Start by creating a namespace for Crossplane:
 
 ```bash
@@ -165,7 +182,7 @@ After installation, verify that Crossplane is running correctly:
 kubectl -n crossplane-system wait --for=condition=Available deployment --all --timeout=5m
 ```
 
-## Install the T Cloud Public Provider
+## 🕹️ Install the T Cloud Public Provider
 ```bash
 cat <<EOF | kubectl apply -f -
 apiVersion: pkg.crossplane.io/v1
@@ -316,3 +333,10 @@ spec:
 ```
 [# Managing Resources Across Multiple Cloud Providers with Crossplane](https://oneuptime.com/blog/post/2026-02-09-crossplane-multiple-clouds/view)
 
+# 🤷‍♂️ Where to find out more about the Provider and Crossplane
+
+- Official Crossplane [docs](https://docs.crossplane.io/latest/) is a good place to start
+- Our Github has a [quick start guide](https://github.com/opentelekomcloud/provider-opentelekomcloud/tree/main#getting-started) for the Provider's deployment
+- Configuration,upgrade and import [docs](https://github.com/opentelekomcloud/provider-opentelekomcloud/tree/main/docs) 
+- CRDs are self documenting, but [Upbound's](https://marketplace.upbound.io/providers/opentelekomcloud/provider-opentelekomcloud/v0.9.0?tab=managedResources) page might be friendlier
+- If you are having issues you can request help in [Github](https://github.com/opentelekomcloud/provider-opentelekomcloud/issues)
