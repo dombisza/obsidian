@@ -34,7 +34,7 @@ By treating infrastructure as code within Kubernetes and integrating naturally w
 
 ## 💡 Let Crossplane automate cloud infra
 
-[T Cloud Crossplane provider](https://github.com/opentelekomcloud/provider-opentelekomcloud) brings cloud resource management into Kubernetes, enabling declarative provisioning and automated reconciliation of services like *RDS*, *CCE*, *OBS*, *ECS*, etc...
+[T Cloud Crossplane provider](https://github.com/opentelekomcloud/provider-opentelekomcloud) brings our cloud resource management into Kubernetes, enabling declarative provisioning and automated reconciliation of services like *RDS*, *CCE*, *OBS*, *ECS*, etc...
 
 When managing cloud resources in Crossplane, there are four key components working together:
 
@@ -107,6 +107,7 @@ spec:
 
 > [!NOTE]
 > The provider ships hundreds of new APIs and controllers by default, which will increase the load on `kube-apiserver` and `etcd`. Please consider using [ManagedResourceActivationPolicies](https://docs.crossplane.io/latest/managed-resources/managed-resource-activation-policies/) to only activate needed resources.
+![image](crossplane_metrics.png)
 
 # 🕹️ManagedResources (MR)
 
@@ -195,31 +196,12 @@ EOF
 ```
 
 `ClusterProviderConfig` setup with secret:
+```shell
+kubectl -n crossplane-system create secret generic provider-secret --from-literal=credentials="${UPTEST_CLOUD_CREDENTIALS}" --dry-run=client -o yaml | kubectl apply -f
+```
 
 ```bash
 cat <<EOF | kubectl apply -f -
-apiVersion: v1
-kind: Secret
-metadata:
-  name: provider-secret
-  namespace: crossplane-system
-type: Opaque
-stringData:
-  credentials: |
-    {
-      "user_name": "admin",
-      "password": "t0ps3cr3t11",
-      "auth_url": "https://iam.eu-de.otc.t-systems.com/v3",
-      "domain_name": "OTCxxxxx",
-      "tenant_name": "eu-de_project",
-      "swauth": "false",
-      "allow_reauth": "true",
-      "max_retries": "2",
-      "max_backoff_retries": "6",
-      "backoff_retry_timeout": "60",
-      "insecure": "false"
-    }
----
 apiVersion: opentelekomcloud.m.crossplane.io/v1beta1
 kind: ClusterProviderConfig
 metadata:
@@ -275,6 +257,7 @@ spec:
 ```
 
 ### ⚡️Links for the working example:
+[Function](https://github.com/dombisza/obsidian/blob/master/crossplane-intro/manifests/001_function.yaml)
 [Composite Resource Definition](https://github.com/dombisza/obsidian/blob/master/crossplane-intro/manifests/002_xrd.yaml)
 [Composition](https://github.com/dombisza/obsidian/blob/master/crossplane-intro/manifests/003_xr.yaml)
 [DbInstance](https://github.com/dombisza/obsidian/blob/master/crossplane-intro/manifests/004_psql.yaml)
@@ -337,6 +320,7 @@ spec:
 
 - Official Crossplane [docs](https://docs.crossplane.io/latest/) is a good place to start
 - Our Github has a [quick start guide](https://github.com/opentelekomcloud/provider-opentelekomcloud/tree/main#getting-started) for the Provider's deployment
-- Configuration,upgrade and import [docs](https://github.com/opentelekomcloud/provider-opentelekomcloud/tree/main/docs) 
+- Understanding [ProviderConfig](https://docs.crossplane.io/latest/packages/providers/#provider-configuration) types 
+- Configuration, upgrade and import [docs](https://github.com/opentelekomcloud/provider-opentelekomcloud/tree/main/docs) 
 - CRDs are self documenting, but [Upbound's](https://marketplace.upbound.io/providers/opentelekomcloud/provider-opentelekomcloud/v0.9.0?tab=managedResources) page might be friendlier
 - If you are having issues you can request help in [Github](https://github.com/opentelekomcloud/provider-opentelekomcloud/issues)
