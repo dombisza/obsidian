@@ -1,0 +1,8 @@
+apiVersion: pkg.crossplane.io/v1
+kind: Provider
+metadata:
+  name: provider-opentelekomcloud
+spec:
+  package: xpkg.upbound.io/opentelekomcloud/provider-opentelekomcloud:v0.9.0
+  runtimeConfigRef:
+    name: fast-reconcile
