@@ -1,4 +1,4 @@
-![image](intro-img.png)
+![image](img/intro-img.png)
 
 TODOS: links, re-read, re-structure based on feedback
 # 🍦 What is Crossplane
@@ -43,7 +43,7 @@ When managing cloud resources in Crossplane, there are four key components worki
 3. **Crossplane Providers** – The cloud/service specific implementations.
 4. **ETCD** - Persistent storage of desired and observed state.
 
-![image](architecture-img.png)
+![image](img/architecture-img.png)
 
 # 👀 Terraform vs Crossplane operation  
 Crossplane does sound like automated Terraform, what are the differences?
@@ -107,7 +107,7 @@ spec:
 
 > [!NOTE]
 > The provider ships hundreds of new APIs and controllers by default, which will increase the load on `kube-apiserver` and `etcd`. Please consider using [ManagedResourceActivationPolicies](https://docs.crossplane.io/latest/managed-resources/managed-resource-activation-policies/) to only activate needed resources.
-![image](crossplane_metrics.png)
+![image](img/crossplane_metrics.png)
 
 # 🕹️ManagedResources (MR)
 
@@ -143,7 +143,7 @@ spec:
 > `ManagedResources` can be either cluster or namespace scoped. Cluster scoped MRs are legacy resources since v2.0 Crossplane, thus we recommend using Namespace scoped APIs. Staying with OBS example `obs.opentelekomcloud.m.crossplane.io` is a modern namespaced API and `obs.opentelekomcloud.crossplane.io` is legacy Cluster scoped.
 
 ## ⚙️ Automatic reconciliation
-Crossplane and Providers continuously reconciling to the desired state defined in Kubernetes. The Provider watches the `ManagedResource` state in the cloud API and compares it's state with the desired configuration. If a resource is modified outside of Crossplane , the Provider automatically detects and corrects this drift unless configured otherwise.
+Crossplane and Providers continuously reconciling to the desired state defined in Kubernetes. The Provider watches the `ManagedResource` state in the cloud API and compares it's state with the desired configuration. If a resource is modified outside of Crossplane , the Provider automatically detects and corrects this drift unless configured otherwise. By default the reconciliation loop runs every 10 minutes, but it is configurable with [DeploymentRuntimeConfig](https://github.com/opentelekomcloud/provider-opentelekomcloud/blob/main/docs/configure-the-provider.md), but be aware of API rate limits.
 
 ### 🚨 Deletion protection
 By default, the provider protects resources from accidental deletion or re-creation. External resources are deleted only when the Kubernetes resource is intentionally removed.
@@ -225,7 +225,7 @@ EOF
 # 🚀 Composite Resources
 A composite resource, or XR, represents a set of Kubernetes resources as a single Kubernetes object. Crossplane creates composite resources when users access a custom API, defined in the CompositeResourceDefinition.
 
-![image](xrd-img.png)
+![image](img/xrd-img.png)
 
 - **Multi-cloud engineering** – Enables composing infrastructure APIs that work consistently across multiple cloud providers.
 - **Standardized cloud resources** – Allows platform teams to define approved infrastructure patterns, ensuring consistency, security, and compliance across the organization.
@@ -263,10 +263,10 @@ spec:
 ```
 
 ### ⚡️Links for the working example:
-[Function](https://github.com/dombisza/obsidian/blob/master/crossplane-intro/manifests/001_function.yaml)
-[Composite Resource Definition](https://github.com/dombisza/obsidian/blob/master/crossplane-intro/manifests/002_xrd.yaml)
-[Composition](https://github.com/dombisza/obsidian/blob/master/crossplane-intro/manifests/003_xr.yaml)
-[DbInstance](https://github.com/dombisza/obsidian/blob/master/crossplane-intro/manifests/004_psql.yaml)
+[Function](https://github.com/dombisza/obsidian/blob/master/crossplane-intro/manifests/xr/001_function.yaml)
+[Composite Resource Definition](https://github.com/dombisza/obsidian/blob/master/crossplane-intro/manifests/xr/002_xrd.yaml)
+[Composition](https://github.com/dombisza/obsidian/blob/master/crossplane-intro/manifests/xr/003_xr.yaml)
+[DbInstance](https://github.com/dombisza/obsidian/blob/master/crossplane-intro/manifests/xr/004_psql.yaml)
 
 ## 🧩Multi-cloud Platform Engineering
 
