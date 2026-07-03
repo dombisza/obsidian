@@ -109,6 +109,93 @@ spec:
 > The provider ships hundreds of new APIs and controllers by default, which will increase the load on `kube-apiserver` and `etcd`. Please consider using [ManagedResourceActivationPolicies](https://docs.crossplane.io/latest/managed-resources/managed-resource-activation-policies/) to only activate needed resources.
 ![image](img/crossplane_metrics.png)
 
+# 🛠️ Installing and Configuring the Provider
+
+## 🍦 Install Crossplane core
+
+Start by creating a namespace for Crossplane:
+```bash
+kubectl create namespace crossplane-system
+```
+
+Next, add the Crossplane Helm repository and update it:
+```bash
+helm repo add crossplane-stable https://charts.crossplane.io/stable
+helm repo update
+```
+
+Finally, install Crossplane using Helm:
+```bash
+helm install crossplane crossplane-stable/crossplane \
+  --set provider.defaultActivations={"*.opentelekomcloud.m.crossplane.io"} \
+-n crossplane-system
+```
+
+After installation, verify that Crossplane is running correctly:
+```bash
+kubectl -n crossplane-system wait --for=condition=Available deployment --all --timeout=5m
+```
+
+## 🕹️ Install the T Cloud Public Provider
+`Provider` kind is a CRD installed and managed by Crossplane as a [package](https://docs.crossplane.io/latest/packages/) . 
+```yaml
+cat <<EOF | kubectl apply -f -
+apiVersion: pkg.crossplane.io/v1
+kind: Provider
+metadata:
+  name: provider-opentelekomcloud
+spec:
+  package: xpkg.upbound.io/opentelekomcloud/provider-opentelekomcloud:v0.9.0
+EOF
+```
+
+Set up AUTH with `ClusterProviderConfig`:
+```shell
+export CROSSPLANE_CLOUD_CREDENTIALS='{"user_name":"USERNAME","access_key":"MY_AK", "secret_key":"MY_SK","auth_url":"https://iam.eu-de.otc.t-systems.com/v3","domain_name":"MYDOMAIN","tenant_name":"eu-de_PROJECT","swauth":"false","allow_reauth":"true","max_retries":"2","max_backoff_retries":"6","backoff_retry_timeout":"60","insecure":"false"}'
+```
+
+```shell
+kubectl -n crossplane-system create secret generic provider-secret --from-literal=credentials="${CROSSPLANE_CLOUD_CREDENTIALS}" --dry-run=client -o yaml | kubectl apply -f -
+```
+
+`ClusterProviderConfig` kind is installed and managed by the T Cloud provider. You might need to wait 1-2 minutes while the Provider registers.
+```yaml
+cat <<EOF | kubectl apply -f -
+apiVersion: opentelekomcloud.m.crossplane.io/v1beta1
+kind: ClusterProviderConfig
+metadata:
+  name: default
+spec:
+  credentials:
+    source: Secret
+    secretRef:
+      name: provider-secret
+      namespace: crossplane-system
+      key: credentials
+EOF
+```
+
+Deploy a `Bucket` as a test:
+```yaml
+cat <<EOF | kubectl apply -f -
+apiVersion: obs.opentelekomcloud.m.crossplane.io/v1alpha1
+kind: Bucket
+metadata:
+  labels:
+    testing.upbound.io/example-name: b
+  name: b
+spec:
+  forProvider:
+    acl: private
+    versioning: true
+    region: eu-de
+    bucket: my-crossplane-test-1
+    tags:
+      Env: Test
+      foo: bar
+      managed: xplane
+EOF
+```
 # 🕹️ManagedResources (MR)
 
 A _managedResource_ (`MR`) represents an external service in a Provider. When users create a new managed resource, the Provider reacts by creating an external resource inside the Provider’s environment.
@@ -153,73 +240,6 @@ By default, the provider protects resources from accidental deletion or re-creat
   Conditions:
     Last Transition Time:  2026-06-26T11:00:54Z
     Message:               observe failed: cannot run plan: plan failed: Instance cannot be destroyed: Resource opentelekomcloud_rds_instance_v3.team-a-db-f4948320f209 has lifecycle.prevent_destroy set, but the plan calls for this resource to be destroyed. To avoid this error and continue with the plan, either disable lifecycle.prevent_destroy or reduce the scope of the plan using the -target flag.
-```
-
-# 🛠️ Installing and Configuring the Provider
-
-## 🍦 Install Crossplane core
-Start by creating a namespace for Crossplane:
-
-```bash
-kubectl create namespace crossplane-system
-```
-
-Next, add the Crossplane Helm repository and update it:
-
-```bash
-helm repo add crossplane-stable https://charts.crossplane.io/stable
-helm repo update
-```
-
-Finally, install Crossplane using Helm:
-
-```bash
-helm install crossplane crossplane-stable/crossplane \
-  --set provider.defaultActivations={"*.opentelekomcloud.m.crossplane.io"} \
--n crossplane-system
-```
-
-After installation, verify that Crossplane is running correctly:
-
-```bash
-kubectl -n crossplane-system wait --for=condition=Available deployment --all --timeout=5m
-```
-
-## 🕹️ Install the T Cloud Public Provider
-```bash
-cat <<EOF | kubectl apply -f -
-apiVersion: pkg.crossplane.io/v1
-kind: Provider
-metadata:
-  name: provider-opentelekomcloud
-spec:
-  package: xpkg.upbound.io/opentelekomcloud/provider-opentelekomcloud:v0.9.0
-EOF
-```
-
-Set up AUTH with `ClusterProviderConfig`:
-```shell
-export CROSSPLANE_CLOUD_CREDENTIALS='{"user_name":"USERNAME","access_key":"MY_AK", "secret_key":"MY_SK","auth_url":"https://iam.eu-de.otc.t-systems.com/v3","domain_name":"MYDOMAIN","tenant_name":"eu-de_PROJECT","swauth":"false","allow_reauth":"true","max_retries":"2","max_backoff_retries":"6","backoff_retry_timeout":"60","insecure":"false"}'
-```
-
-```shell
-kubectl -n crossplane-system create secret generic provider-secret --from-literal=credentials="${CROSSPLANE_CLOUD_CREDENTIALS}" --dry-run=client -o yaml | kubectl apply -f
-```
-
-```bash
-cat <<EOF | kubectl apply -f -
-apiVersion: opentelekomcloud.m.crossplane.io/v1beta1
-kind: ClusterProviderConfig
-metadata:
-  name: default
-spec:
-  credentials:
-    source: Secret
-    secretRef:
-      name: provider-secret
-      namespace: crossplane-system
-      key: credentials
-EOF
 ```
 
 # 🚀 Composite Resources
