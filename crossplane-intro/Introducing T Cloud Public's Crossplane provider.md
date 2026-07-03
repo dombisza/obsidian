@@ -174,7 +174,9 @@ helm repo update
 Finally, install Crossplane using Helm:
 
 ```bash
-helm install crossplane --namespace crossplane-system crossplane-stable/crossplane 
+helm install crossplane crossplane-stable/crossplane \
+  --set provider.defaultActivations={"*.opentelekomcloud.m.crossplane.io"} \
+-n crossplane-system
 ```
 
 After installation, verify that Crossplane is running correctly:
@@ -195,9 +197,13 @@ spec:
 EOF
 ```
 
-`ClusterProviderConfig` setup with secret:
+Set up AUTH with `ClusterProviderConfig`:
 ```shell
-kubectl -n crossplane-system create secret generic provider-secret --from-literal=credentials="${UPTEST_CLOUD_CREDENTIALS}" --dry-run=client -o yaml | kubectl apply -f
+export CROSSPLANE_CLOUD_CREDENTIALS='{"user_name":"USERNAME","access_key":"MY_AK", "secret_key":"MY_SK","auth_url":"https://iam.eu-de.otc.t-systems.com/v3","domain_name":"MYDOMAIN","tenant_name":"eu-de_PROJECT","swauth":"false","allow_reauth":"true","max_retries":"2","max_backoff_retries":"6","backoff_retry_timeout":"60","insecure":"false"}'
+```
+
+```shell
+kubectl -n crossplane-system create secret generic provider-secret --from-literal=credentials="${CROSSPLANE_CLOUD_CREDENTIALS}" --dry-run=client -o yaml | kubectl apply -f
 ```
 
 ```bash
