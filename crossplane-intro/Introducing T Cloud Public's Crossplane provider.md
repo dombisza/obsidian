@@ -1,6 +1,4 @@
 ![image](img/intro-img.png)
-
-TODOS: links, re-read, re-structure based on feedback
 # 🍦 What is Crossplane
 
 [Crossplane](https://docs.crossplane.io/latest/whats-crossplane/) is an open-source control plane that extends Kubernetes to manage cloud infrastructure and services using Kubernetes. It enables platform teams to provision and manage resources across providers such as AWS, Azure, GCP, **T Cloud Public** through declarative, Kubernetes-native configurations.
@@ -39,10 +37,11 @@ By treating infrastructure as code within Kubernetes and integrating naturally w
 When managing cloud resources in Crossplane, there are four key components working together:
 
 1. **Kubernetes API** – Store resources, validate requests, enforce RBAC, notify controllers.
-2. **Crossplane core** – Compositions, functions, dependency management, resource orchestration.
-3. **Crossplane Providers** – The cloud/service specific implementations.
+2. **Crossplane core** – Compositions, packages, functions, dependency management, resource orchestration.
+3. **Crossplane Providers** – The cloud/service specific implementations(APIs + controllers).
 4. **ETCD** - Persistent storage of desired and observed state.
 
+When you apply a ManagedResource manifest, the Crossplane Provider reconciles the desired state in Kubernetes with the actual state in the cloud provider's API, creating, updating, or deleting the external resource as needed.
 ![image](img/architecture-img.png)
 
 # 👀 Terraform vs Crossplane operation  
@@ -243,9 +242,14 @@ By default, the provider protects resources from accidental deletion or re-creat
 ```
 
 # 🚀 Composite Resources
-A composite resource, or XR, represents a set of Kubernetes resources as a single Kubernetes object. Crossplane creates composite resources when users access a custom API, defined in the CompositeResourceDefinition.
+A composite resource, or XR, represents a set of Kubernetes resources as a single Kubernetes object. Crossplane creates composite resources when users access a custom API, defined in the CompositeResourceDefinition(XRD).
+
+- Composite resource definitions (`XRDs`) define the schema for a custom API.
+- Compositions are a template for creating multiple Kubernetes resources as a single _composite_ resource.
 
 ![image](img/xrd-img.png)
+
+## 👍 Compositions can enable:
 
 - **Multi-cloud engineering** – Enables composing infrastructure APIs that work consistently across multiple cloud providers.
 - **Standardized cloud resources** – Allows platform teams to define approved infrastructure patterns, ensuring consistency, security, and compliance across the organization.
@@ -253,7 +257,7 @@ A composite resource, or XR, represents a set of Kubernetes resources as a singl
 - **Infrastructure abstraction** – Hides cloud-provider-specific complexity behind higher-level APIs that align with business and platform requirements.
 - **Reusable infrastructure patterns** – Packages common architectures (such as databases, Kubernetes clusters, or application environments) into reusable building blocks that can be deployed repeatedly and consistently.
 
-## 🚀 Standardized Database showcase
+## 🏗️ Standardized Database showcase
 
 Imagine a company with multiple development teams, each needing an SQL database for their applications. Using Crossplane, the Platform Engineering team can create guardrails, security policies, and standards that developers must follow. This allows development teams to self-service database provisioning without needing to understand the underlying database infrastructure, cloud APIs or Crossplane.
 
