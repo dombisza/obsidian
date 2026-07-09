@@ -30,7 +30,7 @@ By treating infrastructure as code within Kubernetes and integrating naturally w
 	- many **more**
 
 
-## 💡 Let Crossplane automate cloud infra
+## 💡 Crossplane architecture
 
 [T Cloud Crossplane provider](https://github.com/opentelekomcloud/provider-opentelekomcloud) brings our cloud resource management into Kubernetes, enabling declarative provisioning and automated reconciliation of services like *RDS*, *CCE*, *OBS*, *ECS*, etc...
 
@@ -57,9 +57,8 @@ Crossplane does sound like automated Terraform, what are the differences?
 | **Operational Model**   | Push-based execution                                                  | Pull-based reconciliation                                                 |
 | **Multi-Cloud Support** | Mature and extensive                                                  | Limited, but catching up                                                  |
 | **GitOps Integration**  | Indirect, usually through CI/CD runners                               | Native fit with GitOps tools like ArgoCD                                  |
-| **Day-2 Operations**    | Changes require Terraform runs                                        | Continuous management and automated remediation                           |
 | **Learning Curve**      | Easier for infrastructure teams                                       | "Easier" for Kubernetes-centric platform teams, but can be more complex   |
-| **Best Fit**            | Traditional infrastructure automation                                 | IdP, Kubernetes-first organizations                                       |
+
 
 # ⎈ Crossplane providers
 
@@ -93,10 +92,8 @@ spec:
 ```
 
 - `forProvider` section:
-    - Similar to Terraform configuration
     - Single [source of truth](https://docs.crossplane.io/latest/managed-resources/managed-resources/#forprovider)
     - **Desired** state definition
-    - Protected against deletion by default
 ## 🦾 provider-opentelekomcloud
 
 - Provider built using **Upjet tooling**
@@ -157,7 +154,7 @@ export CROSSPLANE_CLOUD_CREDENTIALS='{"user_name":"USERNAME","access_key":"MY_AK
 kubectl -n crossplane-system create secret generic provider-secret --from-literal=credentials="${CROSSPLANE_CLOUD_CREDENTIALS}" --dry-run=client -o yaml | kubectl apply -f -
 ```
 
-`ClusterProviderConfig` kind is installed and managed by the T Cloud provider. You might need to wait 1-2 minutes while the Provider registers.
+`ClusterProviderConfig` kind is installed and managed by the T Cloud provider. You might need to wait 1-2 minutes while the Provider starts all controllers.
 ```yaml
 cat <<EOF | kubectl apply -f -
 apiVersion: opentelekomcloud.m.crossplane.io/v1beta1
@@ -241,7 +238,7 @@ By default, the provider protects resources from accidental deletion or re-creat
     Message:               observe failed: cannot run plan: plan failed: Instance cannot be destroyed: Resource opentelekomcloud_rds_instance_v3.team-a-db-f4948320f209 has lifecycle.prevent_destroy set, but the plan calls for this resource to be destroyed. To avoid this error and continue with the plan, either disable lifecycle.prevent_destroy or reduce the scope of the plan using the -target flag.
 ```
 
-# 🚀 Composite Resources
+# 🚀 Composite Resources (XR)
 A composite resource, or XR, represents a set of Kubernetes resources as a single Kubernetes object. Crossplane creates composite resources when users access a custom API, defined in the CompositeResourceDefinition(XRD).
 
 - Composite resource definitions (`XRDs`) define the schema for a custom API.
